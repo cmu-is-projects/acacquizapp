@@ -23,7 +23,6 @@ defmodule Flash.Question do
 
     def randomUnique(bottom, top, limit, result) do
       verse = :rand.uniform(top) - bottom
-	  Logger.debug verse
       case Enum.member?(result, verse) do
         true ->
           randomUnique(bottom, top, limit, result)
@@ -37,7 +36,6 @@ defmodule Flash.Question do
       
       verses = randomUnique(sectionQuery.start_verse, sectionQuery.end_verse, String.to_integer(limit), [])
       for verse_id <- verses, into: [] do
-	    Logger.debug verse_id
         query = Ecto.Adapters.SQL.query( 
           Flash.Repo,
           "SELECT id, text, answer, question_type_id, verse, section_id, book, chapter FROM questions WHERE (book=$1 AND verse LIKE $2 and CHAPTER=$3) ORDER BY RANDOM() LIMIT 1;",

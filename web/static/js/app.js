@@ -21,6 +21,7 @@ import { Tooltip } from 'react-bootstrap'
 import { OverlayTrigger } from 'react-bootstrap'
 import { DropdownButton  } from 'react-bootstrap'
 import { FormControl } from 'react-bootstrap'
+import { FieldGroup } from 'react-bootstrap'
 
 
 // Import local files
@@ -89,10 +90,10 @@ class Dropdown extends React.Component {
 }
 
 
-export default class UserList extends React.Component {
+export default class Questions extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {results: [], count: 0, answer: "", showModal: false, limit: 10};
+    this.state = {results: [], count: 0, answer: "", showModal: false, limit: 10, value: ""};
     this.viewModal = this.viewModal.bind(this);
     this.resetBank = this.resetBank.bind(this);
   }
@@ -137,6 +138,20 @@ export default class UserList extends React.Component {
     }
   }    
   
+  submitAnswer(){
+    fetch('/answer', { 
+        method: 'POST',
+        data: {
+          answer: this.state.value
+        }
+      })
+      .then(function(response) {
+        return response.json()
+      }).then(function(body) {
+        console.log(body);
+      });    
+  }
+  
   componentWillMount(){
     this.resetBank()    
     this.viewModal()
@@ -148,24 +163,30 @@ export default class UserList extends React.Component {
       showModal: true 
     });
   }
-    
+
+ handleChange(e) {
+    this.setState({ value: e });
+  }  
 
   render() {
     var inst = this.state.results[this.state.count][0]
     return( <div>
       <h3 className='question'>Question: {this.state.results[this.state.count][0].text } </h3>
+      <p> 
+          <FormControl
+            type="text"
+            onChange={(e) =>this.handleChange(e.target.value)}
+            placeholder="Enter text"
+            value={this.state.value}
+          />
+        <button className= 'submit' onClick= {this.submitAnswer.bind(this)} >Submit</button>
+      </p>
       <p>Answer: {this.state.answer}</p>
       <i>{inst.book} {inst.chapter}-{inst.verse} ({this.state.count})</i>
       <div>
-        <button className= 'next'
-          onClick= {this.nextQuestion.bind(this)}
-        >Next</button>
-        <button className= 'answer'
-          onClick= {this.showAnswer.bind(this)}
-        >Show Answer</button>
-        <button className='reset'
-          onClick= {this.viewModal}
-        >Reset</button>
+        <button className= 'next' onClick= {this.nextQuestion.bind(this)} >Next</button>
+        <button className= 'answer' onClick= {this.showAnswer.bind(this)}>Show Answer</button>
+        <button className='reset' onClick= {this.viewModal} >Reset</button>
         <Dropdown showModal= {this.state.showModal} start={this.resetBank} /> 
       </div>
 
@@ -176,6 +197,6 @@ export default class UserList extends React.Component {
 }
 
 
-ReactDOM.render(<UserList />, document.getElementById("dashboard"))
+ReactDOM.render(<Questions />, document.getElementById("dashboard"))
 
 
