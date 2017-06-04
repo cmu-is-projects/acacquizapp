@@ -106,7 +106,7 @@ class Dropdown extends React.Component {
 export default class Questions extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {results: [], count: 0, answer: "", showModal: false, limit: 10, value: ""};
+    this.state = {results: [], count: 0, answer: "", showModal: false, limit: 10, value: "", current: {}};
     this.viewModal = this.viewModal.bind(this);
     this.resetBank = this.resetBank.bind(this);
   }
@@ -117,7 +117,7 @@ export default class Questions extends React.Component {
 	  });
   }
   
-  resetBank(){
+  reset1Bank(){
     var id = $("#chapter :selected").val()
     if(id == null){
       id = "33"
@@ -134,11 +134,16 @@ export default class Questions extends React.Component {
       async: false
     }).then(function(data) {
       this.setState({ results: data.response });
-    }.bind(this));		    
+      this.setState({
+        current: data.response[this.state.count][0]
+      });	       
+    }.bind(this));		
+    
+   
   }  
   
   
-  reset1Bank(){
+  resetBank(){
     var id = $("#chapter :selected").val()
     if(id == null){
       id = "33"
@@ -153,8 +158,10 @@ export default class Questions extends React.Component {
     fetch("http://pabible.tk:4000/random?_format=json&id="+id+"&limit="+this.state.limit.toString())
       .then((response) => response.json())
       .then(function(responseJson){
-        console.log(responseJson.response);
-        this.setState({ results: responseJson.response });
+        this.setState({ results: responseJson.response });        
+        this.setState({
+          current: responseJson.response[this.state.count][0]
+        });	    
       }.bind(this));    
      
   }  
@@ -172,6 +179,9 @@ export default class Questions extends React.Component {
       this.setState({
         answer: ""
       });		
+      this.setState({
+        current: this.state.results[this.state.count + 1][0]
+      });		      
     }
   }  
 
@@ -190,7 +200,7 @@ export default class Questions extends React.Component {
     });    
   }
   
-  componentWillMount(){
+  componentDidMount(){
     this.resetBank()    
     this.viewModal()
   }   
@@ -207,9 +217,8 @@ export default class Questions extends React.Component {
   }  
 
   render() {
-    var inst = this.state.results[this.state.count][0]
     return( <div>
-      <h3 className='question'>Question: {this.state.results[this.state.count][0].text } </h3>
+      <h3 className='question'>Question: {this.state.current.text } </h3>
       <p> 
           <FormControl
             type="text"
@@ -220,7 +229,7 @@ export default class Questions extends React.Component {
         <button className= 'submit' onClick= {this.submitAnswer.bind(this)} >Submit</button>
       </p>
       <p>Answer: {this.state.answer}</p>
-      <i>{inst.book} {inst.chapter}-{inst.verse} ({this.state.count})</i>
+      <i>{this.state.current.book} {this.state.current.chapter}-{this.state.current.verse} ({this.state.count})</i>
       <div>
         <button className= 'next' onClick= {this.nextQuestion.bind(this)} >Next</button>
         <button className= 'answer' onClick= {this.showAnswer.bind(this)}>Show Answer</button>
