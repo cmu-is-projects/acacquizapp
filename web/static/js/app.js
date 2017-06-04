@@ -37,7 +37,7 @@ class Dropdown extends React.Component {
     this.state = { chapters: []};
   }  
 
-  getChapters(){
+  get1Chapters(){
     $.ajax({
       dataType: "json",
       url: "http://pabible.tk:4000/section?_format=json",
@@ -45,7 +45,20 @@ class Dropdown extends React.Component {
     }).then(function(data) {
       this.setState({ chapters: data.response });
     }.bind(this));	
-  }    
+  }  
+
+  getChapters(){
+ 
+    fetch('http://pabible.tk:4000/section?_format=json')
+      .then((response) => response.json())
+      .then((responseJson) => {
+        this.setState({ chapters: responseJson.response });
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+    
+  }      
 
   componentWillMount(){
     this.getChapters()
@@ -124,6 +137,30 @@ export default class Questions extends React.Component {
     }.bind(this));		    
   }  
   
+  
+  reset1Bank(){
+    var id = $("#chapter :selected").val()
+    if(id == null){
+      id = "33"
+    }
+    this.setState({
+      count: 0
+    })
+    this.setState({
+      showModal: false
+    })    
+    
+    fetch("http://pabible.tk:4000/random?_format=json&id="+id+"&limit="+this.state.limit.toString())
+      .then((response) => response.json())
+      .then(function(responseJson){
+        console.log(responseJson.response);
+        this.setState({ results: responseJson.response });
+      }.bind(this));    
+     
+  }  
+    
+  
+  
   nextQuestion(){	 
     if(this.state.count == this.state.limit - 1){
       this.resetBank()
@@ -136,20 +173,21 @@ export default class Questions extends React.Component {
         answer: ""
       });		
     }
-  }    
+  }  
+
   
   submitAnswer(){
     fetch('/answer', { 
-        method: 'POST',
-        data: {
-          answer: this.state.value
-        }
-      })
-      .then(function(response) {
-        return response.json()
-      }).then(function(body) {
-        console.log(body);
-      });    
+      method: 'POST',
+      data: {
+        answer: this.state.value
+      }
+    })
+    .then(function(response) {
+      return response.json()
+    }).then(function(body) {
+      console.log(body);
+    });    
   }
   
   componentWillMount(){
