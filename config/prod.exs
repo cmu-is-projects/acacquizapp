@@ -56,6 +56,15 @@ config :logger, level: :info
 #     config :flash, Flash.Endpoint, server: true
 #
 
+
+config :flash, Flash.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  username: "quizmaster",
+  password: "ykmf-ptd.",
+  database: "quizbank",
+  hostname: "localhost",
+  pool_size: 10
+
 # Finally import the config/prod.secret.exs
 # which should be versioned separately.
 import_config "prod.secret.exs"

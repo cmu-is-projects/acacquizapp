@@ -23,7 +23,7 @@ import { DropdownButton  } from 'react-bootstrap'
 import { FormControl } from 'react-bootstrap'
 import { FieldGroup } from 'react-bootstrap'
 
-
+  
 // Import local files
 //
 // Local files can be imported directly using relative
@@ -40,7 +40,7 @@ class Dropdown extends React.Component {
   get1Chapters(){
     $.ajax({
       dataType: "json",
-      url: "http://pabible.tk:4000/section?_format=json",
+      url: "section?_format=json",
       async: false
     }).then(function(data) {
       this.setState({ chapters: data.response });
@@ -49,7 +49,7 @@ class Dropdown extends React.Component {
 
   getChapters(){
  
-    fetch('http://pabible.tk:4000/section?_format=json')
+    fetch('section?_format=json')
       .then((response) => response.json())
       .then((responseJson) => {
         this.setState({ chapters: responseJson.response });
@@ -106,87 +106,40 @@ class Dropdown extends React.Component {
 export default class Questions extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {results: [], count: 0, answer: "", showModal: false, limit: 10, value: "", current: {}};
+    this.state = {results: [], 
+                  count: 0, 
+                  answer: "", 
+                  showModal: false, 
+                  limit: 10, 
+                  value: "", 
+                  current: {}, 
+                  questionTimer: 30,
+                  answerTimer: 10,
+                  secondsRemaining: 0,
+                  points: 0,
+                  notice: "",
+                  nextbutton: false,
+                  answerbutton: false
+                  };
     this.viewModal = this.viewModal.bind(this);
     this.resetBank = this.resetBank.bind(this);
+    this.tick = this.tick.bind(this);
+    this.handleKeyPress = this.handleKeyPress.bind(this)
   }
   
-  showAnswer(){
-	  this.setState({
-		  answer: this.state.results[this.state.count][0].answer
-	  });
-  }
-  
-  reset1Bank(){
-    var id = $("#chapter :selected").val()
-    if(id == null){
-      id = "33"
-    }
-    this.setState({
-      count: 0
-    })
-    this.setState({
-      showModal: false
-    })    
-    $.ajax({
-      dataType: "json",
-      url: "http://pabible.tk:4000/random?_format=json&id="+id+"&limit="+this.state.limit.toString(),
-      async: false
-    }).then(function(data) {
-      this.setState({ results: data.response });
+
+  submitAnswer(){
+    console.log(this.state.current.answer.replace(/\W/g, '').toLowerCase());
+    if(this.state.value.replace(/\W/g, '').toLowerCase() == this.state.current.answer.replace(/\W/g, '').toLowerCase()){
       this.setState({
-        current: data.response[this.state.count][0]
-      });	       
-    }.bind(this));		
-    
-   
-  }  
-  
-  
-  resetBank(){
-    var id = $("#chapter :selected").val()
-    if(id == null){
-      id = "33"
-    }
-    this.setState({
-      count: 0
-    })
-    this.setState({
-      showModal: false
-    })    
-    
-    fetch("http://pabible.tk:4000/random?_format=json&id="+id+"&limit="+this.state.limit.toString())
-      .then((response) => response.json())
-      .then(function(responseJson){
-        this.setState({ results: responseJson.response });        
-        this.setState({
-          current: responseJson.response[this.state.count][0]
-        });	    
-      }.bind(this));    
-     
-  }  
-    
-  
-  
-  nextQuestion(){	 
-    if(this.state.count == this.state.limit - 1){
-      this.resetBank()
-      this.viewModal()      
+        points: this.state.points + 1,
+        notice: "Correct"
+      })
     }else{
       this.setState({
-        count: this.state.count + 1
-      });
-      this.setState({
-        answer: ""
-      });		
-      this.setState({
-        current: this.state.results[this.state.count + 1][0]
-      });		      
+        notice: "Incorrect"
+      })         
     }
-  }  
-
-  
-  submitAnswer(){
     fetch('/answer', { 
       method: 'POST',
       data: {
@@ -198,7 +151,80 @@ export default class Questions extends React.Component {
     }).then(function(body) {
       console.log(body);
     });    
+  }      
+  
+  showAnswer(){
+		clearInterval(this.interval);
+    this.submitAnswer()  
+	  this.setState({
+		  answer: this.state.current.answer,
+      answerbutton: false,
+      nextbutton: true
+	  });
+    this.setState({ secondsRemaining: this.state.answerTimer })
+    this.interval = setInterval(this.tick, 1000, "answer")         
   }
+ 
+  
+  resetBank(){
+    var id = $("#chapter :selected").val()
+    if(id == null){
+      id = "33"
+    }else{
+      this.setState({ points: 0,
+                      secondsRemaining: this.state.questionTimer,
+                      count: 0,
+                      showModal: false,
+                      answerbutton: true
+      })
+      this.interval = setInterval(this.tick, 1000, "question")      
+      
+      fetch("random?_format=json&id="+id+"&limit="+this.state.limit.toString())
+        .then((response) => response.json())
+        .then(function(responseJson){
+          this.setState({ results: responseJson.response });        
+          this.setState({
+            current: responseJson.response[this.state.count][0]
+          });	    
+        }.bind(this));    
+    }  
+  }
+  
+
+  
+  
+  nextQuestion(){	 
+	  this.setState({
+      answerbutton: true,
+      nextbutton: false
+	  });  
+	clearInterval(this.interval);
+    this.setState({ value: "", notice: "" })    
+    if(this.state.count == this.state.limit - 1){
+      this.viewModal()      
+    }else{
+      this.setState({ secondsRemaining: this.state.questionTimer })
+      this.interval = setInterval(this.tick, 1000, "question") 
+      this.setState({
+        count: this.state.count + 1,
+        answer: "",
+        current: this.state.results[this.state.count + 1][0]
+      });      
+    }
+  }  
+  
+  tick(type) {
+    this.setState({secondsRemaining: this.state.secondsRemaining - 1})
+    if (this.state.secondsRemaining <= 0) {
+      clearInterval(this.interval);
+      if(type == "question"){
+        this.showAnswer()
+      }
+      if(type == "answer"){
+        this.nextQuestion()
+      }
+    }
+  }  
   
   componentDidMount(){
     this.resetBank()    
@@ -215,28 +241,44 @@ export default class Questions extends React.Component {
  handleChange(e) {
     this.setState({ value: e });
   }  
+  
+  handleKeyPress(e) {
+    if(e.key === 'Enter') {
+      if(this.state.nextbutton){
+        this.nextQuestion()
+      }
+      if(this.state.answerbutton){
+        this.showAnswer()
+      }      
+    }
+  }  
 
   render() {
     return( <div>
+      <h4>Notice: {this.state.notice}</h4>
+      <h4>Timer: {this.state.secondsRemaining} </h4>
+      <h4>Points: {this.state.points} </h4>
       <h3 className='question'>Question: {this.state.current.text } </h3>
       <p> 
           <FormControl
+            id="value"
             type="text"
             onChange={(e) =>this.handleChange(e.target.value)}
             placeholder="Enter text"
             value={this.state.value}
+            onKeyPress={this.handleKeyPress}
           />
-        <button className= 'submit' onClick= {this.submitAnswer.bind(this)} >Submit</button>
       </p>
       <p>Answer: {this.state.answer}</p>
       <i>{this.state.current.book} {this.state.current.chapter}-{this.state.current.verse} ({this.state.count})</i>
       <div>
-        <button className= 'next' onClick= {this.nextQuestion.bind(this)} >Next</button>
-        <button className= 'answer' onClick= {this.showAnswer.bind(this)}>Show Answer</button>
-        <button className='reset' onClick= {this.viewModal} >Reset</button>
+        <button id="next" className= 'next' onClick= {this.nextQuestion.bind(this)} disabled={!this.state.nextbutton} >Next Question</button>
+        <button id="submit" className= 'answer' onClick= {this.showAnswer.bind(this)} disabled={!this.state.answerbutton} >Submit Answer</button>
+        
+        <button className='reset' onClick= {this.viewModal} >Reset</button> 
         <Dropdown showModal= {this.state.showModal} start={this.resetBank} /> 
       </div>
-
+      {this.state.current.answer}
 	 </div>)
 	
   };

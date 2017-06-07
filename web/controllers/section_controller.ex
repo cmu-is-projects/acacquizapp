@@ -12,7 +12,8 @@ defmodule Flash.SectionController do
   end
 
   def index(conn, _params) do
-    s = Repo.all(Section)
+    s = Repo.all(from s in Section, where: s.active == true)
+		
     render(conn, :index, sections: s)
   end
 

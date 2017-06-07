@@ -9,6 +9,7 @@ defmodule Flash.Section do
     field :chapter, :integer
     field :start_verse, :integer
     field :end_verse, :integer
+    field :active, :boolean
   end
 
   @doc """
