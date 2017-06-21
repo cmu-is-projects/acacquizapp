@@ -48,7 +48,6 @@ class Dropdown extends React.Component {
   }  
 
   getChapters(){
- 
     fetch('section?_format=json')
       .then((response) => response.json())
       .then((responseJson) => {
@@ -159,9 +158,9 @@ export default class Questions extends React.Component {
 	  this.setState({
 		  answer: this.state.current.answer,
       answerbutton: false,
-      nextbutton: true
+      nextbutton: true,
+      secondsRemaining: this.state.answerTimer
 	  });
-    this.setState({ secondsRemaining: this.state.answerTimer })
     this.interval = setInterval(this.tick, 1000, "answer")         
   }
  
@@ -181,35 +180,34 @@ export default class Questions extends React.Component {
       
       fetch("random?_format=json&id="+id+"&limit="+this.state.limit.toString())
         .then((response) => response.json())
-        .then(function(responseJson){
-          this.setState({ results: responseJson.response });        
+        .then(function(responseJson){     
           this.setState({
+            results: responseJson.response,
             current: responseJson.response[this.state.count][0]
           });	    
         }.bind(this));    
     }  
   }
   
-
   
-  
-  nextQuestion(){	 
+  nextQuestion(){
+		clearInterval(this.interval);    
 	  this.setState({
       answerbutton: true,
-      nextbutton: false
+      nextbutton: false,
+      value: "", 
+      notice: ""
 	  });  
-	clearInterval(this.interval);
-    this.setState({ value: "", notice: "" })    
     if(this.state.count == this.state.limit - 1){
       this.viewModal()      
     }else{
-      this.setState({ secondsRemaining: this.state.questionTimer })
-      this.interval = setInterval(this.tick, 1000, "question") 
       this.setState({
+        secondsRemaining: this.state.questionTimer,
         count: this.state.count + 1,
         answer: "",
         current: this.state.results[this.state.count + 1][0]
-      });      
+      }); 
+      this.interval = setInterval(this.tick, 1000, "question")       
     }
   }  
   
@@ -226,21 +224,18 @@ export default class Questions extends React.Component {
     }
   }  
   
-  componentDidMount(){
-    this.resetBank()    
+  componentDidMount(){  
     this.viewModal()
   }   
   
 
   viewModal(){
+		clearInterval(this.interval);    
     this.setState({ 
       showModal: true 
     });
   }
 
- handleChange(e) {
-    this.setState({ value: e });
-  }  
   
   handleKeyPress(e) {
     if(e.key === 'Enter') {
@@ -263,7 +258,7 @@ export default class Questions extends React.Component {
           <FormControl
             id="value"
             type="text"
-            onChange={(e) =>this.handleChange(e.target.value)}
+            onChange={(e) => this.setState({ value: e.target.value})}
             placeholder="Enter text"
             value={this.state.value}
             onKeyPress={this.handleKeyPress}
@@ -274,7 +269,6 @@ export default class Questions extends React.Component {
       <div>
         <button id="next" className= 'next' onClick= {this.nextQuestion.bind(this)} disabled={!this.state.nextbutton} >Next Question</button>
         <button id="submit" className= 'answer' onClick= {this.showAnswer.bind(this)} disabled={!this.state.answerbutton} >Submit Answer</button>
-        
         <button className='reset' onClick= {this.viewModal} >Reset</button> 
         <Dropdown showModal= {this.state.showModal} start={this.resetBank} /> 
       </div>
